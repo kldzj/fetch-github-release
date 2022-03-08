@@ -59,15 +59,15 @@ function filterAsset(asset: GithubReleaseAsset): boolean {
     return new RegExp(command.search).test(asset.name);
 }
 
-downloadRelease(
-    user as string,
-    repo as string,
-    outputdir as string,
+downloadRelease({
+    user: user as string,
+    repo: repo as string,
+    outputDir: outputdir as string,
     filterRelease,
     filterAsset,
-    !!command.zipped,
-    !!command.quiet
-)
+    leaveZipped: !!command.zipped,
+    disableLogging: !!command.quiet,
+})
     .catch((err) => {
         console.error(err);
         process.exitCode = 1;
