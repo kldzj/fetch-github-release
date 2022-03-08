@@ -14,6 +14,24 @@ function pass() {
 
 const MultiProgress = require("multi-progress");
 
+interface DownloadOptions {
+    user: string;
+    repo: string;
+    outputDir: string;
+    filterRelease?: ReleaseFilter;
+    filterAsset?: AssetFilter;
+    leaveZipped?: boolean;
+    disableLogging?: boolean;
+}
+
+type DownloadResult<O extends DownloadOptions> = {
+    destf: string;
+    release: GithubRelease;
+} & (O["leaveZipped"] extends false ? { entries: string[] } : {});
+
+type ReleaseFilter = (release: GithubRelease) => boolean;
+type AssetFilter = (asset: GithubReleaseAsset) => boolean;
+
 /**
  * Download a specific github release
  * @param user The name of the github user or organization
@@ -24,15 +42,15 @@ const MultiProgress = require("multi-progress");
  * @param leaveZipped Optionally leave the file zipped
  * @param disableLogging Optionally disable logging for quiet output
  */
-export async function downloadRelease(
-    user: string,
-    repo: string,
-    outputDir: string,
-    filterRelease: (release: GithubRelease) => boolean = pass,
-    filterAsset: (release: GithubReleaseAsset) => boolean = pass,
+export async function downloadRelease<O extends DownloadOptions>({
+    user,
+    repo,
+    outputDir,
+    filterRelease = pass,
+    filterAsset = pass,
     leaveZipped = false,
-    disableLogging = false
-): Promise<string[]> {
+    disableLogging = false,
+}: O): Promise<DownloadResult<O>[]> {
     if (!user) {
         throw new Error("Missing user argument");
     }
@@ -53,44 +71,58 @@ export async function downloadRelease(
         console.error(`Downloading ${user}/${repo}@${release.tag_name}...`);
     }
 
-    const promises = release.assets.map(async (asset): Promise<string> => {
-        let progress;
+    const promises = release.assets.map(
+        async (asset): Promise<DownloadResult<O>> => {
+            let progress;
 
-        if (process.stdout.isTTY && !disableLogging) {
-            const bar = bars.newBar(`${rpad(asset.name, 24)} :bar :etas`, {
-                complete: "▇",
-                incomplete: "-",
-                width: process.stdout.columns - 36,
-                total: 100,
-            });
-            progress = bar.update.bind(bar);
-        }
-
-        // eslint-disable-next-line no-param-reassign
-        outputDir = path.isAbsolute(outputDir)
-            ? outputDir
-            : path.resolve(outputDir);
-        if (!fs.existsSync(outputDir)) {
-            fs.mkdirSync(outputDir);
-        }
-
-        if (!fs.statSync(outputDir).isDirectory()) {
-            throw new Error(`Output path "${outputDir}" must be a directory`);
-        }
-
-        const destf = path.join(outputDir, asset.name);
-        if (!fs.existsSync(destf)) {
-            const dest = fs.createWriteStream(destf);
-
-            await download(asset.url, dest, progress);
-            if (!leaveZipped && /\.zip$/.exec(destf)) {
-                await extract(destf, {
-                    dir: outputDir,
+            if (process.stdout.isTTY && !disableLogging) {
+                const bar = bars.newBar(`${rpad(asset.name, 24)} :bar :etas`, {
+                    complete: "▇",
+                    incomplete: "-",
+                    width: process.stdout.columns - 36,
+                    total: 100,
                 });
-                fs.unlinkSync(destf);
+                progress = bar.update.bind(bar);
             }
+
+            // eslint-disable-next-line no-param-reassign
+            outputDir = path.isAbsolute(outputDir)
+                ? outputDir
+                : path.resolve(outputDir);
+
+            if (!fs.existsSync(outputDir)) {
+                fs.mkdirSync(outputDir);
+            }
+
+            if (!fs.statSync(outputDir).isDirectory()) {
+                throw new Error(
+                    `Output path "${outputDir}" must be a directory`
+                );
+            }
+
+            let entries: string[] = [];
+            const destf = path.join(outputDir, asset.name);
+            if (!fs.existsSync(destf)) {
+                const dest = fs.createWriteStream(destf);
+
+                await download(asset.url, dest, progress);
+                if (!leaveZipped && /\.zip$/.exec(destf)) {
+                    await extract(destf, {
+                        dir: outputDir,
+                        onEntry(entry) {
+                            entries.push(entry.fileName);
+                        },
+                    });
+                    fs.unlinkSync(destf);
+                }
+            }
+
+            if (leaveZipped) {
+                return { destf, release } as DownloadResult<O>;
+            }
+
+            return { destf, release, entries };
         }
-        return destf;
-    });
+    );
     return Promise.all(promises);
 }
