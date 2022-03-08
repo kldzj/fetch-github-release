@@ -48,7 +48,7 @@ describe("#downloadRelease()", () => {
         const check = (a: GithubReleaseAsset) =>
             a.name.indexOf("darwin-amd64") >= 0;
 
-        const [result] = await downloadRelease({
+        const { assets } = await downloadRelease({
             user: "me",
             repo: "test",
             outputDir: tmpobj.name,
@@ -56,7 +56,9 @@ describe("#downloadRelease()", () => {
             disableLogging: true,
         });
 
-        expect(result.entries).toBeArray();
+        for (const asset of assets) {
+            expect(asset.entries).toBeArray();
+        }
     });
 
     it("downloads a release (without unzipping it)", async () => {

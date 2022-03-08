@@ -14,6 +14,9 @@ function pass() {
 
 const MultiProgress = require("multi-progress");
 
+type ReleaseFilter = (release: GithubRelease) => boolean;
+type AssetFilter = (asset: GithubReleaseAsset) => boolean;
+
 interface DownloadOptions {
     user: string;
     repo: string;
@@ -24,13 +27,14 @@ interface DownloadOptions {
     disableLogging?: boolean;
 }
 
-type DownloadResult<I extends boolean | undefined> = {
+type SingleDownloadResult<I extends boolean | undefined> = {
     destf: string;
-    release: GithubRelease;
 } & (false extends I ? { entries: string[] } : {});
 
-type ReleaseFilter = (release: GithubRelease) => boolean;
-type AssetFilter = (asset: GithubReleaseAsset) => boolean;
+interface DownloadResult<I extends boolean | undefined> {
+    assets: SingleDownloadResult<I>[];
+    release: GithubRelease;
+}
 
 /**
  * Download a specific github release
@@ -50,7 +54,7 @@ export async function downloadRelease<O extends DownloadOptions>({
     filterAsset = pass,
     leaveZipped = false,
     disableLogging = false,
-}: O): Promise<DownloadResult<O["leaveZipped"]>[]> {
+}: O): Promise<DownloadResult<O["leaveZipped"]>> {
     if (!user) {
         throw new Error("Missing user argument");
     }
@@ -72,7 +76,7 @@ export async function downloadRelease<O extends DownloadOptions>({
     }
 
     const promises = release.assets.map(
-        async (asset): Promise<DownloadResult<O["leaveZipped"]>> => {
+        async (asset): Promise<SingleDownloadResult<O["leaveZipped"]>> => {
             let progress;
 
             if (process.stdout.isTTY && !disableLogging) {
@@ -125,12 +129,12 @@ export async function downloadRelease<O extends DownloadOptions>({
             }
 
             if (leaveZipped) {
-                return { destf, release } as DownloadResult<O["leaveZipped"]>;
+                return { destf } as SingleDownloadResult<O["leaveZipped"]>;
             }
 
-            return { destf, release, entries };
+            return { destf, entries };
         }
     );
 
-    return Promise.all(promises);
+    return { release, assets: await Promise.all(promises) };
 }
