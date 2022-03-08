@@ -1,15 +1,15 @@
-import http from 'http';
-import https from 'https';
-import { Writable } from 'stream';
-import URL from 'url';
+import http from "http";
+import https from "https";
+import { Writable } from "stream";
+import URL from "url";
 
 const { GITHUB_TOKEN } = process.env;
 
 function getRequestOptions(urlString: string) {
     const url = URL.parse(urlString);
     const headers: Record<string, string> = {
-        Accept: 'application/octet-stream',
-        'User-Agent': '@terascope/fetch-github-release',
+        Accept: "application/octet-stream",
+        "User-Agent": "@terascope/fetch-github-release",
     };
 
     if (GITHUB_TOKEN) {
@@ -32,23 +32,28 @@ export function download(
 
         protocol
             .get(options, (res1) => {
-                protocol = /^https:/.exec(res1.headers.location!) ? https : http;
+                protocol = /^https:/.exec(res1.headers.location!)
+                    ? https
+                    : http;
 
                 protocol
                     .get(res1.headers.location!, (res2) => {
-                        const total = parseInt(res2.headers['content-length'] ?? '0', 10);
+                        const total = parseInt(
+                            res2.headers["content-length"] ?? "0",
+                            10
+                        );
                         let completed = 0;
                         res2.pipe(w);
-                        res2.on('data', (data) => {
+                        res2.on("data", (data) => {
                             completed += data.length;
                             progress(completed / total);
                         });
-                        res2.on('progress', progress);
-                        res2.on('error', reject);
-                        res2.on('end', resolve);
+                        res2.on("progress", progress);
+                        res2.on("error", reject);
+                        res2.on("end", resolve);
                     })
-                    .on('error', reject);
+                    .on("error", reject);
             })
-            .on('error', reject);
+            .on("error", reject);
     });
 }

@@ -5,5 +5,5 @@ export function rpad(text: string, len: number): string {
         t = `${text.substr(0, len - 3)}...`;
     }
 
-    return `${t}${new Array(len - t.length + 1).join(' ')}`;
+    return `${t}${new Array(len - t.length + 1).join(" ")}`;
 }

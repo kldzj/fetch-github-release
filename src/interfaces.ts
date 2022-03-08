@@ -1,6 +1,6 @@
 /**
  * See https://developer.github.com/v3/repos/releases/#get-a-single-release-asset
-*/
+ */
 export interface GithubRelease {
     id: number;
     url: string;

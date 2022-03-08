@@ -1,16 +1,19 @@
-import got, { OptionsOfJSONResponseBody } from 'got';
-import { GithubRelease } from './interfaces';
+import got, { OptionsOfJSONResponseBody } from "got";
+import { GithubRelease } from "./interfaces";
 
 const { GITHUB_TOKEN } = process.env;
 
-export async function getReleases(user: string, repo: string): Promise<GithubRelease[]> {
+export async function getReleases(
+    user: string,
+    repo: string
+): Promise<GithubRelease[]> {
     const url = `https://api.github.com/repos/${user}/${repo}/releases`;
 
     const requestConfig: OptionsOfJSONResponseBody = {
         headers: {
-            'User-Agent': '@terascope/fetch-github-release'
+            "User-Agent": "@terascope/fetch-github-release",
         } as Record<string, string>,
-        responseType: 'json'
+        responseType: "json",
     };
 
     if (GITHUB_TOKEN) {

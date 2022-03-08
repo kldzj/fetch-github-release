@@ -1,18 +1,18 @@
-import os from 'os';
-import fs from 'fs';
-import path from 'path';
-import extract from 'extract-zip';
-import { getReleases } from './getReleases';
-import { getLatest } from './getLatest';
-import { download } from './download';
-import { rpad } from './rpad';
-import { GithubRelease, GithubReleaseAsset } from './interfaces';
+import os from "os";
+import fs from "fs";
+import path from "path";
+import extract from "extract-zip";
+import { getReleases } from "./getReleases";
+import { getLatest } from "./getLatest";
+import { download } from "./download";
+import { rpad } from "./rpad";
+import { GithubRelease, GithubReleaseAsset } from "./interfaces";
 
 function pass() {
     return true;
 }
 
-const MultiProgress = require('multi-progress');
+const MultiProgress = require("multi-progress");
 
 /**
  * Download a specific github release
@@ -22,8 +22,8 @@ const MultiProgress = require('multi-progress');
  * @param filterRelease Optionally filter the release
  * @param filterAsset Optionally filter the asset for a given release
  * @param leaveZipped Optionally leave the file zipped
- * @param leaveZipped Optionally disable logging for quiet output
-*/
+ * @param disableLogging Optionally disable logging for quiet output
+ */
 export async function downloadRelease(
     user: string,
     repo: string,
@@ -31,13 +31,13 @@ export async function downloadRelease(
     filterRelease: (release: GithubRelease) => boolean = pass,
     filterAsset: (release: GithubReleaseAsset) => boolean = pass,
     leaveZipped = false,
-    disableLogging = false,
+    disableLogging = false
 ): Promise<string[]> {
     if (!user) {
-        throw new Error('Missing user argument');
+        throw new Error("Missing user argument");
     }
     if (!repo) {
-        throw new Error('Missing user argument');
+        throw new Error("Missing user argument");
     }
     const bars = new MultiProgress(process.stderr);
 
@@ -58,16 +58,18 @@ export async function downloadRelease(
 
         if (process.stdout.isTTY && !disableLogging) {
             const bar = bars.newBar(`${rpad(asset.name, 24)} :bar :etas`, {
-                complete: '▇',
-                incomplete: '-',
+                complete: "▇",
+                incomplete: "-",
                 width: process.stdout.columns - 36,
-                total: 100
+                total: 100,
             });
             progress = bar.update.bind(bar);
         }
 
         // eslint-disable-next-line no-param-reassign
-        outputDir = path.isAbsolute(outputDir) ? outputDir : path.resolve(outputDir);
+        outputDir = path.isAbsolute(outputDir)
+            ? outputDir
+            : path.resolve(outputDir);
         if (!fs.existsSync(outputDir)) {
             fs.mkdirSync(outputDir);
         }
@@ -83,7 +85,7 @@ export async function downloadRelease(
             await download(asset.url, dest, progress);
             if (!leaveZipped && /\.zip$/.exec(destf)) {
                 await extract(destf, {
-                    dir: outputDir
+                    dir: outputDir,
                 });
                 fs.unlinkSync(destf);
             }

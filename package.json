@@ -1,7 +1,7 @@
 {
-  "name": "@terascope/fetch-github-release",
+  "name": "@kldzj/fetch-github-release",
   "publishConfig": {
-    "access": "public"
+    "registry": "https://npm.pkg.github.com"
   },
   "version": "0.8.7",
   "description": "Download a specific release from github",
@@ -14,7 +14,6 @@
   "scripts": {
     "build": "tsc --project tsconfig.json",
     "build:watch": "yarn build --watch",
-    "lint": "eslint --ignore-path .gitignore --ext .js,.ts .",
     "lint:fix": "yarn lint --fix",
     "setup": "yarn && yarn build",
     "test": "jest",
@@ -30,7 +29,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/terascope/fetch-github-release.git"
+    "url": "https://github.com/kldzj/fetch-github-release.git"
   },
   "keywords": [
     "github",
@@ -40,7 +39,7 @@
   "author": "Stephan Florquin",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/terascope/fetch-github-release/issues"
+    "url": "https://github.com/kldzj/fetch-github-release/issues"
   },
   "dependencies": {
     "extract-zip": "^2.0.1",
@@ -51,12 +50,10 @@
     "yargs": "^17.2.1"
   },
   "devDependencies": {
-    "@terascope/eslint-config": "^0.7.0",
     "@types/jest": "^27.0.2",
     "@types/node": "^16.10.2",
     "@types/stream-buffers": "^3.0.4",
     "@types/tmp": "^0.2.1",
-    "eslint": "^8.1.0",
     "jest": "^27.2.4",
     "jest-extended": "^2.0.0",
     "nock": "^13.0.2",
