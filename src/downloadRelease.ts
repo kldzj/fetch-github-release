@@ -24,10 +24,10 @@ interface DownloadOptions {
     disableLogging?: boolean;
 }
 
-type DownloadResult<O extends DownloadOptions> = {
+type DownloadResult<I extends boolean | undefined> = {
     destf: string;
     release: GithubRelease;
-} & (O["leaveZipped"] extends false ? { entries: string[] } : {});
+} & (false extends I ? { entries: string[] } : {});
 
 type ReleaseFilter = (release: GithubRelease) => boolean;
 type AssetFilter = (asset: GithubReleaseAsset) => boolean;
@@ -50,7 +50,7 @@ export async function downloadRelease<O extends DownloadOptions>({
     filterAsset = pass,
     leaveZipped = false,
     disableLogging = false,
-}: O): Promise<DownloadResult<O>[]> {
+}: O): Promise<DownloadResult<O["leaveZipped"]>[]> {
     if (!user) {
         throw new Error("Missing user argument");
     }
@@ -72,7 +72,7 @@ export async function downloadRelease<O extends DownloadOptions>({
     }
 
     const promises = release.assets.map(
-        async (asset): Promise<DownloadResult<O>> => {
+        async (asset): Promise<DownloadResult<O["leaveZipped"]>> => {
             let progress;
 
             if (process.stdout.isTTY && !disableLogging) {
@@ -110,6 +110,13 @@ export async function downloadRelease<O extends DownloadOptions>({
                     await extract(destf, {
                         dir: outputDir,
                         onEntry(entry) {
+                            if (
+                                entry.fileName.endsWith(path.sep) ||
+                                entry.fileName.endsWith("/")
+                            ) {
+                                return;
+                            }
+
                             entries.push(entry.fileName);
                         },
                     });
@@ -118,11 +125,12 @@ export async function downloadRelease<O extends DownloadOptions>({
             }
 
             if (leaveZipped) {
-                return { destf, release } as DownloadResult<O>;
+                return { destf, release } as DownloadResult<O["leaveZipped"]>;
             }
 
             return { destf, release, entries };
         }
     );
+
     return Promise.all(promises);
 }

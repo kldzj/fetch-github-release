@@ -1,3 +1,4 @@
+import "jest-extended";
 import fs from "fs";
 import path from "path";
 import nock from "nock";
@@ -41,6 +42,21 @@ describe("#downloadRelease()", () => {
                 "utf8"
             )
         ).toEqual(fileTxt);
+    });
+
+    it("returns entries list", async () => {
+        const check = (a: GithubReleaseAsset) =>
+            a.name.indexOf("darwin-amd64") >= 0;
+
+        const [result] = await downloadRelease({
+            user: "me",
+            repo: "test",
+            outputDir: tmpobj.name,
+            filterAsset: check,
+            disableLogging: true,
+        });
+
+        expect(result.entries).toBeArray();
     });
 
     it("downloads a release (without unzipping it)", async () => {
